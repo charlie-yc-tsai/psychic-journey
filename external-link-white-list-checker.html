@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>正則表達式列表與URL測試工具</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+
+<body>
+    <h1>正則表達式列表與URL測試工具</h1>
+
+    <div class="section">
+        <h2>1. 正則表達式列表</h2>
+        <p>請輸入陣列格式的正則表達式：</p>
+        <textarea id="regexInput"
+            placeholder='例如：["regex:^https?://(([^/]*\\.)?storage\\.googleapis\\.com)(/.*)?$","regex:^https://(cdn\\.attn\\.tv/benq/dtag\\.js)(/.*)?$"]'></textarea>
+        <button onclick="parseAndDisplay()">顯示列表</button>
+        <div class="section">
+            <h2>2. URL測試</h2>
+            <p>輸入一個URL以測試它是否匹配上面的正則表達式：</p>
+            <input type="text" id="urlInput" placeholder="例如: https://www.googletagmanager.com/gtag/js?id=UA-20836307-4">
+            <button onclick="testUrl()">測試URL</button>
+    
+            <div id="urlTestResults">
+                <p>URL測試結果將在這裡顯示</p>
+            </div>
+        </div>
+    
+        <div id="results">
+            <p>正則表達式列表將在這裡顯示</p>
+        </div>
+    </div>
+
+    
+    <script src="js/main.js"></script>
+</body>
+
+</html>
