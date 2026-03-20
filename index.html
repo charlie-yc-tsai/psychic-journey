@@ -2790,6 +2790,104 @@ font-family: 'Source Sans Pro'
   justify-content: center;
 }
 </style></head>
+    <script>
+(function () {
+  /**
+   * iOS PDF 下載修正
+   * 原理：fetch PDF → 建立本地 Blob URL → 觸發 <a download>
+   * 前提：image-prod.qisda.com 需回應 CORS header（Access-Control-Allow-Origin: *）
+   * 若 CORS 被擋，會 fallback 至開新分頁（iOS 內建 PDF 檢視器有「儲存」按鈕）
+   */
+
+  function isIOS() {
+    return /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+  }
+
+  function getFilename(url) {
+    try {
+      // 取得路徑最後一段並 decode URI 中文
+      const parts = new URL(url).pathname.split('/');
+      return decodeURIComponent(parts[parts.length - 1]);
+    } catch {
+      return 'document.pdf';
+    }
+  }
+
+  function downloadViaBlob(url, filename) {
+    // 顯示載入提示
+    const toast = document.createElement('div');
+    toast.textContent = '準備下載中…';
+    Object.assign(toast.style, {
+      position: 'fixed', bottom: '24px', left: '50%',
+      transform: 'translateX(-50%)', background: '#1d5b7d',
+      color: '#fff', padding: '10px 20px', borderRadius: '8px',
+      zIndex: 99999, fontSize: '14px', pointerEvents: 'none'
+    });
+    document.body.appendChild(toast);
+
+    fetch(url, { mode: 'cors' })
+      .then(function (res) {
+        if (!res.ok) throw new Error('HTTP ' + res.status);
+        return res.blob();
+      })
+      .then(function (blob) {
+        const blobUrl = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = blobUrl;
+        a.download = filename;
+        a.style.display = 'none';
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        // 稍後釋放記憶體
+        setTimeout(function () { URL.revokeObjectURL(blobUrl); }, 10000);
+      })
+      .catch(function (err) {
+        console.warn('[PDF Download] Blob 下載失敗，改為開新分頁:', err);
+        // CORS 被擋時的 fallback：開新分頁，iOS 內建 PDF 檢視器右上角可存檔
+        window.open(url, '_blank');
+      })
+      .finally(function () {
+        document.body.removeChild(toast);
+      });
+  }
+
+  function patchPdfLinks() {
+    // 找出所有指向 .pdf 的 <a> 連結
+    const links = document.querySelectorAll('a[href$=".pdf"], a[href*=".pdf?"]');
+
+    links.forEach(function (link) {
+      const url = link.href;
+      if (!url) return;
+
+      const filename = getFilename(url);
+
+      // 非 iOS：直接加 download 屬性即可
+      if (!isIOS()) {
+        link.setAttribute('download', filename);
+        return;
+      }
+
+      // iOS：移除 target="_blank"，改由我們控制
+      link.removeAttribute('target');
+      link.setAttribute('download', filename); // 部分情境有效，多做無妨
+
+      link.addEventListener('click', function (e) {
+        e.preventDefault();
+        downloadViaBlob(url, filename);
+      });
+    });
+  }
+
+  // DOM 載入完成後執行
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', patchPdfLinks);
+  } else {
+    patchPdfLinks();
+  }
+})();
+</script>
+
   <body style="">
     <noscript data-n-head="1" data-hid="gtm-noscript" data-pbody="true"><iframe src="//www.googletagmanager.com/ns.html?id=GTM-TFNMZ5L&l=dataLayer" height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript><div id="__nuxt"><!----><div id="__layout"><div lang="tw" class="default-layout -loading" style="--vh: 1vh; --loading-duration: 0.5s; --scroll-bar-width: 15px;"><div class="default-layout__view"><div class="page-rules appear appear-active"><div class="page-wrapper"><div class="page-wrapper__bg"><div class="page-wrapper__bg-circle"><img src="/_nuxt/img/border-circle.10e938e.png" alt="circle"></div> <div class="page-wrapper__bg-mask"></div></div> <div class="container"><div class="breadcrumbs"><ul class="breadcrumbs__list"><li class="breadcrumbs__item"><a href="/tw" class="breadcrumbs__link nuxt-link-active">
                 首頁
